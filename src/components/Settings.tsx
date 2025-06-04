@@ -18,9 +18,17 @@ const Settings = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingConnection, setEditingConnection] = useState<DatabaseConnection | null>(null);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    type: 'postgresql' | 'mysql' | 'sqlserver';
+    host: string;
+    port: number;
+    database: string;
+    username: string;
+    password: string;
+  }>({
     name: '',
-    type: 'postgresql' as const,
+    type: 'postgresql',
     host: '',
     port: 5432,
     database: '',
@@ -104,7 +112,7 @@ const Settings = () => {
     }
   };
 
-  const getPortByType = (type: string) => {
+  const getPortByType = (type: 'postgresql' | 'mysql' | 'sqlserver') => {
     switch (type) {
       case 'postgresql': return 5432;
       case 'mysql': return 3306;
