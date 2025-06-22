@@ -81,14 +81,79 @@ export const ConfigProvider = ({ children }: ConfigProviderProps) => {
     setConnections(prev => prev.filter(conn => conn.id !== id));
   };
 
+  const validateConnectionData = (connection: DatabaseConnection): { isValid: boolean; error?: string } => {
+    console.log('Validando conexión:', {
+      name: connection.name,
+      type: connection.type,
+      host: connection.host,
+      port: connection.port,
+      database: connection.database,
+      username: connection.username
+    });
+
+    if (!connection.host || connection.host.trim() === '') {
+      return { isValid: false, error: 'Host es requerido' };
+    }
+
+    if (!connection.database || connection.database.trim() === '') {
+      return { isValid: false, error: 'Nombre de base de datos es requerido' };
+    }
+
+    if (!connection.username || connection.username.trim() === '') {
+      return { isValid: false, error: 'Usuario es requerido' };
+    }
+
+    if (!connection.password || connection.password.trim() === '') {
+      return { isValid: false, error: 'Contraseña es requerida' };
+    }
+
+    // Validar puertos típicos por tipo de BD
+    const expectedPorts = {
+      mysql: 3306,
+      postgresql: 5432,
+      sqlserver: 1433
+    };
+
+    if (connection.port <= 0 || connection.port > 65535) {
+      return { isValid: false, error: `Puerto debe estar entre 1 y 65535` };
+    }
+
+    // Advertir si el puerto no es el típico para ese tipo de BD
+    if (connection.port !== expectedPorts[connection.type]) {
+      console.warn(`Puerto ${connection.port} no es típico para ${connection.type}. Puerto esperado: ${expectedPorts[connection.type]}`);
+    }
+
+    return { isValid: true };
+  };
+
   const testConnection = async (id: string): Promise<boolean> => {
-    // Simular test de conexión
+    const connection = connections.find(conn => conn.id === id);
+    if (!connection) {
+      console.error('Conexión no encontrada');
+      return false;
+    }
+
+    console.log('Iniciando prueba de conexión para:', connection.name);
     updateConnection(id, { status: 'testing' });
     
+    // Simular tiempo de conexión
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Simular éxito/fallo aleatorio
-    const success = Math.random() > 0.3;
+    // Validar datos de conexión
+    const validation = validateConnectionData(connection);
+    
+    if (!validation.isValid) {
+      console.error('Error de validación:', validation.error);
+      updateConnection(id, { status: 'disconnected' });
+      return false;
+    }
+
+    // Simular conexión con mejor lógica
+    // En un entorno real, aquí se haría la conexión real a través de una API backend
+    const success = Math.random() > 0.2; // 80% de éxito para pruebas
+    
+    console.log(`Resultado de conexión para ${connection.name}:`, success ? 'EXITOSA' : 'FALLIDA');
+    
     updateConnection(id, { status: success ? 'connected' : 'disconnected' });
     
     return success;
